@@ -1,0 +1,21 @@
+# ROS2 build files
+build/
+install/
+log/
+
+# colcon
+.colcon/
+
+# VS Code
+.vscode/
+
+# CLion
+.idea/
+
+# Python
+__pycache__/
+*.pyc
+
+# Linux
+*.swp
+*~
