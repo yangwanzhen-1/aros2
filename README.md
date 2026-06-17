@@ -7,10 +7,10 @@
 ├── base_interfaces_demo	# 📦自定义消息文件
 │   ├── CMakeLists.txt
 │   ├── msg
-│   │   └── Student.msg
+│   │   └── Student.msg		# 话题通信自定义接口消息
 │   ├── package.xml
 │   └── srv
-│       └── AddInts.srv
+│       └── AddInts.srv		# 服务通信接口消息
 ```
 
 ```bash
