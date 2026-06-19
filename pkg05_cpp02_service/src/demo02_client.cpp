@@ -31,8 +31,11 @@ public:
 
   // 3-2.等待服务连接；
   bool connect_server(){
-    while (!client_->wait_for_service(1s))
+    // 在指定超时时间内连接服务器，如果连接上了，那么返回true,否则返回false.
+    while (!client_->wait_for_service(1s))  //循环以1s超时时间连接服务器，直到连接服务器才退出循环
     {
+      // 对 ctrl+c 这个操作作出特殊处理
+      // 1.怎么判断 ctrl+c按下？ 2.如何处理？
       if(!rclcpp::ok()){
         RCLCPP_INFO(rclcpp::get_logger("rclcpp"),"强制退出！");
         return false;
@@ -43,9 +46,14 @@ public:
   }
 
   rclcpp::Client<AddInts>::FutureAndRequestId send_request(int32_t num1, int32_t num2){
+    /*
+    rclcpp::Client<base_interfaces_demo::srv::AddInts>::FutureAndRequestId 
+    async_send_request(std::shared_ptr<base_interfaces_demo::srv::AddInts_Request> request)
+    */
     auto request = std::make_shared<AddInts::Request>();
     request->num1 = num1;
     request->num2 = num2;
+
     return client_->async_send_request(request);
   }
 
