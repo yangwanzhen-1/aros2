@@ -53,7 +53,7 @@ public:
     
     auto goal_msg = Progress::Goal();
     goal_msg.num = num;
-    RCLCPP_INFO(this->get_logger(), "发送请求数据！数值：%d", goal_msg.num);
+    RCLCPP_INFO(this->get_logger(), "发送请求数据！数值：%ld", goal_msg.num);
 
     auto send_goal_options = rclcpp_action::Client<Progress>::SendGoalOptions();
     send_goal_options.goal_response_callback = std::bind(&MinimalActionClient::goal_response_callback, this, _1);
