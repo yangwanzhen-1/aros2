@@ -36,7 +36,7 @@ public:
     // 3-1.创建原生乌龟位姿订阅方，回调函数中获取乌龟位姿；
     pose_sub_ = this->create_subscription<turtlesim::msg::Pose>("/turtle1/pose", 10, std::bind(&ExeNavActionServer::poseCallBack, this, _1));
     // 3-2.创建原生乌龟速度发布方；
-    smd_vel_pub_ = this->create_publisher<geometry_msgs::msg::Twist>("/turtle1/cmd_vel", 10);
+    cmd_vel_pub_ = this->create_publisher<geometry_msgs::msg::Twist>("/turtle1/cmd_vel", 10);
     // 3-3.创建动作服务端；   
     nav_action_server_ = rclcpp_action::create_server<base_interfaces_demo::action::Nav>(
       this,
@@ -56,9 +56,9 @@ protected:
   // 3-4.解析动作客户端发送的请求；
   rclcpp_action::GoalResponse goal_callback(const rclcpp_action::GoalUUID & uuid, std::shared_ptr<const base_interfaces_demo::action::Nav::Goal> goal)
   {
-    RCLCPP_INFO(this->get_logger(), "Received goal request");
+    RCLCPP_INFO(this->get_logger(), "请求坐标:(%.2f,%.2f),航向:%.2f",goal->goal_x, goal->goal_y, goal->goal_theta);
     (void)uuid;
-    if (false) {
+    if (goal->goal_x < 0 || goal->goal_x > 11.1 || goal->goal_y < 0 || goal->goal_y > 11.1) {
       return rclcpp_action::GoalResponse::REJECT;
     }
     return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
@@ -67,12 +67,12 @@ protected:
   // 3-5.处理动作客户端发送的取消请求；
   rclcpp_action::CancelResponse cancel_callback(const std::shared_ptr<ServerGoalHandle> goal_handle)
   {
-    RCLCPP_INFO(this->get_logger(), "Received cancel request");
+    RCLCPP_INFO(this->get_logger(), "任取取消！");
     (void)goal_handle;
     return rclcpp_action::CancelResponse::ACCEPT;
   }
   
-  // 3-5.处理动作客户端发送的取消请求；
+  // 3-6.创建新线程处理请求；
   void accepted_callback(const std::shared_ptr<ServerGoalHandle> goal_handle)
   {
     std::thread(std::bind(&ExeNavActionServer::execute, this, _1), goal_handle).detach();
@@ -81,32 +81,80 @@ protected:
   // 3-7.新线程产生连续反馈并响应最终结果。
   void execute(const std::shared_ptr<ServerGoalHandle> goal_handle)
   {
-    RCLCPP_INFO(this->get_logger(), "Executing goal");
-    const auto goal = goal_handle->get_goal();
+    RCLCPP_INFO(this->get_logger(), "开始执行任务......");
+    // 解析目标值
+    // const auto goal = goal_handle->get_goal();
+    float goal_x = goal_handle->get_goal()->goal_x;
+    float goal_y = goal_handle->get_goal()->goal_y;
+    // 创建连续反馈对象指针；
     auto feedback = std::make_shared<base_interfaces_demo::action::Nav::Feedback>();
+    // 创建最终结果对象指针；
     auto result = std::make_shared<base_interfaces_demo::action::Nav::Result>();
   
     rclcpp::Rate loop_rate(1);
-    for (size_t i = 0; i < 10; i++) {
+    while (true) {
+      // 任务执行中，关于客户端发送取消请求的处理；
       if (goal_handle->is_canceling()) {
         goal_handle->canceled(result);
         RCLCPP_ERROR(this->get_logger(), "Goal Canceled");
         return;
       }
   
+      // 解析原生乌龟位姿数据；
+      float turtle1_x = turtle1_pose_->x;
+      float turtle1_y = turtle1_pose_->y;
+      float turtle1_theta = turtle1_pose_->theta;
+      // 计算原生乌龟与目标乌龟的x向以及y向距离；
+      float x_distance = goal_x - turtle1_x;
+      float y_distance = goal_y - turtle1_y;
+
+      // 计算剩余距离
+      float distance = std::hypot(x_distance, y_distance);
+
+      // 计算目标方向
+      float target_theta = std::atan2(y_distance, x_distance);
+      float angle_error = target_theta - turtle1_theta;
+      // 将角度误差归一化到 [-pi, pi]
+      angle_error = std::atan2(std::sin(angle_error),std::cos(angle_error));
+
+      // 计算速度
+      geometry_msgs::msg::Twist twist;
+      if(std::abs(angle_error) > 0.1){
+        twist.linear.x = 0.0;
+        twist.angular.z = 0.5 * angle_error;
+      } else
+      {
+        twist.linear.x = 0.5 * distance;
+        twist.angular.z = 0.5 * angle_error;
+      }
+      
+
+      cmd_vel_pub_->publish(twist);
+
+
+      // 当两龟距离小于0.15米时，将当前乌龟位姿设置进result并退出循环
+      if(distance < 0.15){
+        //将当前乌龟坐标赋值给 result
+        result->turtle_x = turtle1_x;
+        result->turtle_y = turtle1_y;
+        result->turtle_theta = turtle1_theta;
+        break;
+      }
+      feedback->distance = distance;
       goal_handle->publish_feedback(feedback);
-      RCLCPP_INFO(this->get_logger(), "Sent feedback");
+      RCLCPP_INFO(this->get_logger(),"Sent feedback, distance:%f",distance);
       loop_rate.sleep();
     }
-  
-    goal_handle->succeed(result);
-    RCLCPP_INFO(this->get_logger(), "Successfully executed goal");
+    if(rclcpp::ok()){
+      goal_handle->succeed(result);
+      RCLCPP_INFO(this->get_logger(), "任务结束!");
+    }
   }
 
 private:
   turtlesim::msg::Pose::SharedPtr turtle1_pose_ = nullptr;
   rclcpp::Subscription<turtlesim::msg::Pose>::SharedPtr pose_sub_;
-  rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr smd_vel_pub_;
+  rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_pub_;
   rclcpp_action::Server<base_interfaces_demo::action::Nav>::SharedPtr nav_action_server_;
   
 };
