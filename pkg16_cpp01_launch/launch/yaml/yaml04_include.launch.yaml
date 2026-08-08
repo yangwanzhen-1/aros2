@@ -1,0 +1,9 @@
+# 4.3.4 文件包含
+launch:
+# 导入参数
+- let:
+    name: "bgr"
+    value: "255"
+# 包含头文件
+- include:
+    file: "$(find-pkg-share pkg16_cpp01_launch)/launch/yaml/yaml03_args.launch.yaml"

@@ -1,0 +1,8 @@
+<!-- 4.3.4 文件包含 -->
+<launch>
+    <!-- 导入参数 -->
+    <let name="bg_r" value="0" />
+    <!-- 文件包含 -->
+    <include file="$(find-pkg-share pkg16_cpp01_launch)/launch/xml/xml03_args.launch.xml"/>
+
+</launch>

@@ -1,0 +1,18 @@
+<launch>
+    <!-- 演示 node 的使用  -->
+    <node pkg="turtlesim" exec="turtlesim_node" name="t1" namespace="t1_ns" exec_name="t1_label" respawn="true"/>
+    <node pkg="turtlesim" exec="turtlesim_node" name="t2">
+        <!-- 方式一：直接设置参数 -->
+        <!-- <param name="background_r" value="255" />
+            <param name="background_g" value="255" />
+            <param name="background_b" value="255" /> -->
+        <!-- 方式二：ymal文件加载参数 -->
+        <param from="$(find-pkg-share pkg16_cpp01_launch)/config/t2.yaml" />
+    </node>
+    <node pkg="turtlesim" exec="turtlesim_node" name="t3">
+        <remap from="/turtle1/cmd_vel" to="/cmd_vel" />
+    </node>
+    <node pkg="turtlesim" exec="turtlesim_node" ros_args="--remap __name:=t4 --remap __ns:=/group_2" />
+    <!-- <node pkg="rviz2" exec="rviz2" args="-d $(find-pkg-share cpp01_launch)/config/my.rviz" />   -->
+
+</launch>

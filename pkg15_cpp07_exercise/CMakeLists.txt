@@ -18,6 +18,7 @@ add_executable(exe02_server src/exe02_server.cpp)
 add_executable(exe03_client src/exe03_client.cpp)
 add_executable(exe04_action_server src/exe04_action_server.cpp)
 add_executable(exe05_action_client src/exe05_action_client.cpp)
+add_executable(exe06_param src/exe06_param.cpp)
 
 target_include_directories(exe01_pub_sub PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -63,6 +64,14 @@ ament_target_dependencies(
   "geometry_msgs"
   "rclcpp_action"
 )
+ament_target_dependencies(
+  exe06_param
+  "rclcpp"
+  "turtlesim"
+  "base_interfaces_demo"
+  "geometry_msgs"
+  "rclcpp_action"
+)
 
 install(TARGETS 
   exe01_pub_sub
@@ -70,6 +79,7 @@ install(TARGETS
   exe03_client
   exe04_action_server
   exe05_action_client
+  exe06_param
   DESTINATION lib/${PROJECT_NAME})
 install(DIRECTORY launch
   DESTINATION share/${PROJECT_NAME})

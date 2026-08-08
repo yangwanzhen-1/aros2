@@ -1,0 +1,17 @@
+# 4.3.3 参数设置
+launch:
+# 1,声明参数
+- arg:
+    name: "bgr"
+    default: "255"
+# 调用参数
+- node:
+    pkg: "turtlesim"
+    exec: "turtlesim_node"
+    param:
+    -
+      name: "background_r"
+      value: $(var bgr)
+
+# 3.通过执行launch导入参数
+# ros2 launch pkg16_cpp01_launch yaml03_args.launch.yaml bgr:=125
